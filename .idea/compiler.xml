@@ -16,20 +16,22 @@
         <module name="ticket-service" />
         <module name="index12306-designpattern-spring-boot-starter" />
         <module name="index12306-database-spring-boot-starter" />
+        <module name="gateway-service" />
         <module name="index12306-idempotent-spring-boot-starter" />
         <module name="index12306-web-spring-boot-starter" />
         <module name="order-service" />
         <module name="index12306-user-spring-boot-starter" />
         <module name="index12306-cache-spring-boot-starter" />
-        <module name="index12306-general-test" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="index12306-aggregation-service" target="17" />
       <module name="index12306-gateway-service" target="17" />
+      <module name="index12306-general-test" target="17" />
       <module name="index12306-order-service" target="17" />
       <module name="index12306-pay-service" target="17" />
       <module name="index12306-services" target="17" />
+      <module name="index12306-tests" target="17" />
       <module name="index12306-ticket-service" target="17" />
       <module name="index12306-user-service" target="17" />
     </bytecodeTargetLevel>
