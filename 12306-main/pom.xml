@@ -22,7 +22,6 @@
         <module>dependencies</module>
         <module>frameworks</module>
         <module>services</module>
-        <module>services</module>
     </modules>
 
     <dependencies>

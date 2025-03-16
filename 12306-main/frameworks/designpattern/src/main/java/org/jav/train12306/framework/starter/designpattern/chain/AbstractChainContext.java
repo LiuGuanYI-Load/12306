@@ -20,6 +20,7 @@ package org.jav.train12306.framework.starter.designpattern.chain;
 import org.jav.train12306.framework.starter.bases.ApplicationContextHolder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.Ordered;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 /**
  * 抽象责任链上下文
  */
+@Component
 public final class AbstractChainContext<T> implements CommandLineRunner {
 
     private final Map<String, List<AbstractChainHandler>> abstractChainHandlerContainer = new HashMap<>();
