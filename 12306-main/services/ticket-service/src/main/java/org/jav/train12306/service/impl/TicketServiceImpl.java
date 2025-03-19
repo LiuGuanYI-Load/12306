@@ -213,8 +213,9 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
         purchaseTicketAbstractChainContext.handler(TicketChainMarkEnum.TRAIN_PURCHASE_TICKET_FILTER.name(), requestParam);
 
         // 从令牌桶中获取令牌，检查是否有余票可用
+        //
         TokenResultDTO tokenResult = ticketAvailabilityTokenBucket.takeTokenFromBucket(requestParam);
-        // 如果令牌为空（无余票）
+        // 如果令牌为空（无余票） 并且数据库里面都没有余票
         if (tokenResult.getTokenIsNull()) {
             // 从本地缓存中检查是否已为该列车刷新过令牌
             Object ifPresentObj = tokenTicketsRefreshMap.getIfPresent(requestParam.getTrainId());
@@ -308,11 +309,15 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
 
         // 从分布式缓存中获取列车信息，如果缓存中没有则从数据库查询并缓存
         TrainDO trainDO = distributedCache.safeGet(
-                TRAIN_INFO + trainId, // 缓存键：TRAIN_INFO + trainId
-                TrainDO.class, // 缓存值类型
-                () -> trainMapper.selectById(trainId), // 缓存未命中时的数据加载逻辑
-                ADVANCE_TICKET_DAY, // 缓存过期时间
-                TimeUnit.DAYS // 时间单位
+                TRAIN_INFO + trainId,
+                // 缓存键：TRAIN_INFO + trainId
+                TrainDO.class,
+                // 缓存值类型
+                () -> trainMapper.selectById(trainId),
+                ADVANCE_TICKET_DAY,
+                // 缓存过期时间
+                TimeUnit.DAYS
+                // 时间单位
         );
 
         // 根据列车类型和购票请求选择座位类型和购票结果
@@ -320,13 +325,13 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
 
         // 将购票结果转换为 TicketDO 实体列表
         List<TicketDO> ticketDOList = trainPurchaseTicketResults.stream()
-                .map(each -> TicketDO.builder() // 构建 TicketDO 实体
-                        .username(UserContext.getUsername()) // 设置用户名
-                        .trainId(Long.parseLong(requestParam.getTrainId())) // 设置列车ID
-                        .carriageNumber(each.getCarriageNumber()) // 设置车厢号
-                        .seatNumber(each.getSeatNumber()) // 设置座位号
-                        .passengerId(each.getPassengerId()) // 设置乘客ID
-                        .ticketStatus(TicketStatusEnum.UNPAID.getCode()) // 设置票状态为未支付
+                .map(each -> TicketDO.builder()
+                        .username(UserContext.getUsername())
+                        .trainId(Long.parseLong(requestParam.getTrainId()))
+                        .carriageNumber(each.getCarriageNumber())
+                        .seatNumber(each.getSeatNumber())
+                        .passengerId(each.getPassengerId())
+                        .ticketStatus(TicketStatusEnum.UNPAID.getCode())
                         .build()
                 )
                 .toList(); // 转换为列表
@@ -345,27 +350,27 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
             trainPurchaseTicketResults.forEach(each -> {
                 // 构建订单项创建请求
                 TicketOrderItemCreateRemoteReqDTO orderItemCreateRemoteReqDTO = TicketOrderItemCreateRemoteReqDTO.builder()
-                        .amount(each.getAmount()) // 设置金额
-                        .carriageNumber(each.getCarriageNumber()) // 设置车厢号
-                        .seatNumber(each.getSeatNumber()) // 设置座位号
-                        .idCard(each.getIdCard()) // 设置身份证号
-                        .idType(each.getIdType()) // 设置证件类型
-                        .phone(each.getPhone()) // 设置手机号
-                        .seatType(each.getSeatType()) // 设置座位类型
-                        .ticketType(each.getUserType()) // 设置票类型
-                        .realName(each.getRealName()) // 设置真实姓名
+                        .amount(each.getAmount())
+                        .carriageNumber(each.getCarriageNumber())
+                        .seatNumber(each.getSeatNumber())
+                        .idCard(each.getIdCard())
+                        .idType(each.getIdType())
+                        .phone(each.getPhone())
+                        .seatType(each.getSeatType())
+                        .ticketType(each.getUserType())
+                        .realName(each.getRealName())
                         .build();
 
                 // 构建订单详情响应
                 TicketOrderDetailRespDTO ticketOrderDetailRespDTO = TicketOrderDetailRespDTO.builder()
-                        .amount(each.getAmount()) // 设置金额
-                        .carriageNumber(each.getCarriageNumber()) // 设置车厢号
-                        .seatNumber(each.getSeatNumber()) // 设置座位号
-                        .idCard(each.getIdCard()) // 设置身份证号
-                        .idType(each.getIdType()) // 设置证件类型
-                        .seatType(each.getSeatType()) // 设置座位类型
-                        .ticketType(each.getUserType()) // 设置票类型
-                        .realName(each.getRealName()) // 设置真实姓名
+                        .amount(each.getAmount())
+                        .carriageNumber(each.getCarriageNumber())
+                        .seatNumber(each.getSeatNumber())
+                        .idCard(each.getIdCard())
+                        .idType(each.getIdType())
+                        .seatType(each.getSeatType())
+                        .ticketType(each.getUserType())
+                        .realName(each.getRealName())
                         .build();
 
                 // 将订单项请求添加到列表
@@ -377,27 +382,27 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
 
             // 查询列车站点关系信息
             LambdaQueryWrapper<TrainStationRelationDO> queryWrapper = Wrappers.lambdaQuery(TrainStationRelationDO.class)
-                    .eq(TrainStationRelationDO::getTrainId, trainId) // 列车ID条件
-                    .eq(TrainStationRelationDO::getDeparture, requestParam.getDeparture()) // 出发站条件
-                    .eq(TrainStationRelationDO::getArrival, requestParam.getArrival()); // 到达站条件
+                    .eq(TrainStationRelationDO::getTrainId, trainId)
+                    .eq(TrainStationRelationDO::getDeparture, requestParam.getDeparture())
+                    .eq(TrainStationRelationDO::getArrival, requestParam.getArrival());
 
             // 执行查询，获取列车站点关系信息
             TrainStationRelationDO trainStationRelationDO = trainStationRelationMapper.selectOne(queryWrapper);
 
             // 构建订单创建请求
             TicketOrderCreateRemoteReqDTO orderCreateRemoteReqDTO = TicketOrderCreateRemoteReqDTO.builder()
-                    .departure(requestParam.getDeparture()) // 设置出发站
-                    .arrival(requestParam.getArrival()) // 设置到达站
-                    .orderTime(new Date()) // 设置订单时间
-                    .source(SourceEnum.INTERNET.getCode()) // 设置订单来源为互联网
-                    .trainNumber(trainDO.getTrainNumber()) // 设置列车号
-                    .departureTime(trainStationRelationDO.getDepartureTime()) // 设置出发时间
-                    .arrivalTime(trainStationRelationDO.getArrivalTime()) // 设置到达时间
-                    .ridingDate(trainStationRelationDO.getDepartureTime()) // 设置乘车日期
-                    .userId(UserContext.getUserId()) // 设置用户ID
-                    .username(UserContext.getUsername()) // 设置用户名
-                    .trainId(Long.parseLong(requestParam.getTrainId())) // 设置列车ID
-                    .ticketOrderItems(orderItemCreateRemoteReqDTOList) // 设置订单项列表
+                    .departure(requestParam.getDeparture())
+                    .arrival(requestParam.getArrival())
+                    .orderTime(new Date())
+                    .source(SourceEnum.INTERNET.getCode())
+                    .trainNumber(trainDO.getTrainNumber())
+                    .departureTime(trainStationRelationDO.getDepartureTime())
+                    .arrivalTime(trainStationRelationDO.getArrivalTime())
+                    .ridingDate(trainStationRelationDO.getDepartureTime())
+                    .userId(UserContext.getUserId())
+                    .username(UserContext.getUsername())
+                    .trainId(Long.parseLong(requestParam.getTrainId()))
+                    .ticketOrderItems(orderItemCreateRemoteReqDTOList)
                     .build();
 
             // 远程调用订单服务创建订单
@@ -484,6 +489,7 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
                 for (SeatTypeCountDTO each : seatTypeCountDTOList) {
                     Integer tokenCount = tokenCountMap.get(each.getSeatType());
                     if (tokenCount <= each.getSeatCount()) {
+                        //库存大于当前请求的票数 但是当前令牌小于请求的票数  就删除令牌 等待下次重新刷新
                         ticketAvailabilityTokenBucket.delTokenInBucket(requestParam);
                         break;
                     }

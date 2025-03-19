@@ -143,7 +143,8 @@ public final class TicketAvailabilityTokenBucket {
             redisScript.setResultType(String.class);
             return redisScript;
         });
-        Assert.notNull(actual); // 确保脚本不为空
+        Assert.notNull(actual);
+        // 确保脚本不为空
 
         // 统计乘客请求的座位类型和数量
         Map<Integer, Long> seatTypeCountMap = requestParam.getPassengers().stream()
@@ -247,11 +248,11 @@ public final class TicketAvailabilityTokenBucket {
         stringRedisTemplate.delete(tokenBucketHashKey);
     }
 
-    // 未实现的方法，可能用于手动填充令牌
+/*    // 未实现的方法，可能用于手动填充令牌
     public void putTokenInBucket() {
     }
 
     // 未实现的方法，可能用于初始化令牌
     public void initializeTokens() {
-    }
+    }*/
 }

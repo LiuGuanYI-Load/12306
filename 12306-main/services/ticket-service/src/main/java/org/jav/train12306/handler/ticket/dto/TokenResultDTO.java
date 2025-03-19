@@ -22,7 +22,7 @@ public class TokenResultDTO {
     private Boolean tokenIsNull;
 
     /**
-     * 获取 Token 为空站点座位类型和数量
+     * 获取 Token为空  站点座位类型和数量
      */
     private List<String> tokenIsNullSeatTypeCounts;
 }
