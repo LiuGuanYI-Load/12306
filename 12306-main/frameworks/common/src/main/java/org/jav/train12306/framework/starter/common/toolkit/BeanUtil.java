@@ -84,6 +84,14 @@ public class BeanUtil {
      * @return 转换后对象集合
      */
     public static <T, S> List<T> convert(List<S> sources, Class<T> clazz) {
+/*        if (sources == null) {
+            return null;
+        }
+        List<T> targetList = new ArrayList<>(sources.size());
+        for (Object item : sources) {
+            targetList.add(BEAN_MAPPER_BUILDER.map(item, clazz));
+        }
+        return targetList;*/
         return Optional.ofNullable(sources)
                 .map(each -> {
                     List<T> targetList = new ArrayList<T>(each.size());
