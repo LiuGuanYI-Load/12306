@@ -48,9 +48,15 @@ public class AbstractStrategyChoose implements ApplicationListener<ApplicationIn
     public AbstractExecuteStrategy choose(String mark, Boolean predicateFlag) {
         if (predicateFlag != null && predicateFlag) {
             return abstractExecuteStrategyMap.values().stream()
+                    //mark不为空
                     .filter(each -> StringUtils.hasText(each.patternMatchMark()))
+                    //正则表达式匹配 mark前缀
+/*            public boolean matches() {
+                return this.match(this.from, 1);
+    }*/             //返回true就留下
                     .filter(each -> Pattern.compile(each.patternMatchMark()).matcher(mark).matches())
                     .findFirst()
+                    //最后的流都是空 belike-->
                     .orElseThrow(() -> new ServiceException("策略未定义"));
         }
         return Optional.ofNullable(abstractExecuteStrategyMap.get(mark))
@@ -95,7 +101,8 @@ public class AbstractStrategyChoose implements ApplicationListener<ApplicationIn
         AbstractExecuteStrategy executeStrategy = choose(mark, null);
         return (RESPONSE) executeStrategy.executeResp(requestParam);
     }
-
+    //spring 启动的时候 执行逻辑  把策略模式的bean 都放在 一个map之中
+    //之后的策略选择全部遍历map就可以了 根据mark选择就可以了
     @Override
     public void onApplicationEvent(ApplicationInitializingEvent event) {
         Map<String, AbstractExecuteStrategy> actual = ApplicationContextHolder.getBeansOfType(AbstractExecuteStrategy.class);
