@@ -200,13 +200,15 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
     */
     @Idempotent(
             uniqueKeyPrefix = "index12306-ticket:lock_purchase-tickets:",
-            key = "T(org.opengoofy.index12306.framework.starter.bases.ApplicationContextHolder).getBean('environment').getProperty('unique-name', '')"
+            key = "T(org.jav.train12306.framework.starter.bases.ApplicationContextHolder).getBean('environment').getProperty('unique-name', '')"
                     + "+'_'+"
-                    + "T(org.opengoofy.index12306.frameworks.starter.user.core.UserContext).getUsername()",
+                    + "T(org.jav.train12306.frameworks.starter.user.core.UserContext).getUsername()",
             message = "正在执行下单流程，请稍后...",
             scene = IdempotentSceneEnum.RESTAPI,
             type = IdempotentTypeEnum.SPEL
     )
+    //key错
+    //org.springframework.expression.spel.SpelEvaluationException: EL1005E: Type cannot be found 'org.opengoofy.index12306.framework.starter.bases.ApplicationContextHolder'
     @Override
     public TicketPurchaseRespDTO purchaseTicketsV2(PurchaseTicketReqDTO requestParam) {
         // 使用责任链模式验证请求参数，包括必填项、正确性和乘客是否已购票

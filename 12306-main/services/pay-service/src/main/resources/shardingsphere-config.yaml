@@ -30,14 +30,14 @@ rules:
       pay_database_complex_mod:
         type: CLASS_BASED
         props:
-          algorithmClassName: org.opengoofy.index12306.biz.payservice.dao.algorithm.PayDataBaseComplexAlgorithm
+          algorithmClassName: org.jav.train12306.dao.algorithm.PayDataBaseComplexAlgorithm
           sharding-count: 32
           table-sharding-count: 16
           strategy: complex
       pay_table_complex_mod:
         type: CLASS_BASED
         props:
-          algorithmClassName: org.opengoofy.index12306.biz.payservice.dao.algorithm.PayTableComplexAlgorithm
+          algorithmClassName: org.jav.train12306.dao.algorithm.PayTableComplexAlgorithm
           sharding-count: 32
           strategy: complex
 props:

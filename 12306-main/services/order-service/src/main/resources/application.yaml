@@ -3,6 +3,7 @@ server:
 
 spring:
   application:
+    #name: jav12306-order${unique-name:}-service
     name: index12306-order${unique-name:}-service
   datasource:
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver

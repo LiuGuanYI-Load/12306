@@ -6,19 +6,23 @@ import org.jav.train12306.toolkit.UserInfoDTO;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.jav.train12306.config.Config;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
-
+//filters: - TokenValidate，Gateway 会去找一个叫 TokenValidateGatewayFilterFactory 的 Bean
+@Component
 public class TokenValidateGatewayFilterFactory extends AbstractGatewayFilterFactory<Config>{
     public TokenValidateGatewayFilterFactory() {
         super(Config.class);
     }
+    // 忘记加COmponent就会 Failed to start bean 'webServerStartStop'和: Unable to find GatewayFilterFactory with name TokenValidate
     /**
      * 注销用户时需要传递 Token
      */
@@ -26,9 +30,12 @@ public class TokenValidateGatewayFilterFactory extends AbstractGatewayFilterFact
     @Override
     public GatewayFilter apply(Config config) {
         //springgateway的 的过滤器模式  层层传递  层层处理
+        //和责任链模式 不同的是 springgatewayfilter中间可以停下来  责任链模式是不会停下来 层层转交
         //   **exchange**: 在请求到达网关时，Spring Cloud Gateway 会创建 ServerWebExchange 对象，并将其传递给第一个过滤器。
         //**chain**: Spring Cloud Gateway 会创建 GatewayFilterChain 对象，并将其传递给每个过滤器。
         //获得请求
+/*        exchange：请求的上下文，包含请求和响应。
+        chain：过滤器链，负责把请求传给下一个过滤器*/
         return (exchange, chain) -> {
             ServerHttpRequest request = exchange.getRequest();
             String requestPath = request.getPath().toString();
@@ -50,6 +57,7 @@ public class TokenValidateGatewayFilterFactory extends AbstractGatewayFilterFact
                         httpHeaders.set(UserConstant.USER_TOKEN_KEY, token);
                     }
                 });
+                // 响应式编程的产物，设计上不可变，每次改动得用mutate()生成新对象
                 //修改请求，并将修改后的请求设置到 exchange 中
                 return chain.filter(exchange.mutate().request(builder.build()).build());
             }

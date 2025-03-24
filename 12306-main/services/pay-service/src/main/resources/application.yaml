@@ -4,6 +4,7 @@ server:
 spring:
   application:
     name: index12306-pay${unique-name:}-service
+    #name: jav12306-pay${unique-name:}-service
   datasource:
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
     url: jdbc:shardingsphere:classpath:shardingsphere-config.yaml

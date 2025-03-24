@@ -18,7 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/ticket-service/region-station")
+@RequestMapping("/api/ticket-service")
 public class RegionStationController {
 
     private final RegionStationService regionStationService;
@@ -26,7 +26,7 @@ public class RegionStationController {
     /**
      * 查询车站&城市站点集合信息
      */
-    @GetMapping("/query")
+    @GetMapping("/region-station/query")
     public Result<List<RegionStationQueryRespDTO>> listRegionStation(RegionStationQueryReqDTO requestParam) {
         return Results.success(regionStationService.listRegionStation(requestParam));
     }
@@ -34,7 +34,7 @@ public class RegionStationController {
     /**
      * 查询车站站点集合信息
      */
-    @GetMapping("/all")
+    @GetMapping("/station/all")
     public Result<List<StationQueryRespDTO>> listAllStation() {
         return Results.success(regionStationService.listAllStation());
     }

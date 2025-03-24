@@ -32,8 +32,15 @@ import java.util.stream.Collectors;
 
 /**
  * 抽象责任链上下文
+ ***
+ * @Author: Jav
+ * @Date: 2025/3/24
+ * @Description: 手动配置的不能重复加@component
+ * @Param:
+ * @return:
+ *
  */
-@Component
+//@Component
 public final class AbstractChainContext<T> implements CommandLineRunner {
 
     private final Map<String, List<AbstractChainHandler>> abstractChainHandlerContainer = new HashMap<>();

@@ -19,6 +19,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/ticket-service/ticket")
 public class TicketController {
     private final TicketService ticketService;
+    /**
+     * 根据条件查询车票
+     */
+    @GetMapping("/query")
+    public Result<TicketPageQueryRespDTO> pageListTicketQuery(TicketPageQueryReqDTO requestParam) {
+        return Results.success(ticketService.pageListTicketQueryV2(requestParam));
+    }
 
     /**
      * 购买车票

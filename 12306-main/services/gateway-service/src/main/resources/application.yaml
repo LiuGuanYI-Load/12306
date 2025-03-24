@@ -3,6 +3,7 @@ server:
 spring:
   application:
     name: index12306-gateway${unique-name:}-service
+    #name: jav12306-gateway${unique-name:}-service 想改自己的要改前端文件
   profiles:
     #active: aggregation
     active: dev

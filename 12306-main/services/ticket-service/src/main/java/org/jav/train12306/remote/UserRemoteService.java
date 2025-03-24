@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(value="train12306-user-service")
+@FeignClient(value="index12306-user-service")
+//@FeignClient(value="jav12306-user-service")
 public interface UserRemoteService {
     /**
      * 根据乘车人 ID 集合查询乘车人列表

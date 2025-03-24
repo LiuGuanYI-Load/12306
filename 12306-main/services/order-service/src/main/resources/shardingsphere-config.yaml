@@ -52,27 +52,27 @@ rules:
       order_database_complex_mod:
         type: CLASS_BASED
         props:
-          algorithmClassName: org.opengoofy.index12306.biz.orderservice.dao.algorithm.OrderCommonDataBaseComplexAlgorithm
+          algorithmClassName: org.jav.train12306.dao.algorithm.OrderCommonDataBaseComplexAlgorithm
           sharding-count: 32
           table-sharding-count: 16
           strategy: complex
       order_table_complex_mod:
         type: CLASS_BASED
         props:
-          algorithmClassName: org.opengoofy.index12306.biz.orderservice.dao.algorithm.OrderCommonTableComplexAlgorithm
+          algorithmClassName: org.jav.train12306.dao.algorithm.OrderCommonTableComplexAlgorithm
           sharding-count: 32
           strategy: complex
       order_item_database_complex_mod:
         type: CLASS_BASED
         props:
-          algorithmClassName: org.opengoofy.index12306.biz.orderservice.dao.algorithm.OrderCommonDataBaseComplexAlgorithm
+          algorithmClassName: org.jav.train12306.dao.algorithm.OrderCommonDataBaseComplexAlgorithm
           sharding-count: 32
           table-sharding-count: 16
           strategy: complex
       order_item_table_complex_mod:
         type: CLASS_BASED
         props:
-          algorithmClassName: org.opengoofy.index12306.biz.orderservice.dao.algorithm.OrderCommonTableComplexAlgorithm
+          algorithmClassName: org.jav.train12306.dao.algorithm.OrderCommonTableComplexAlgorithm
           sharding-count: 32
           strategy: complex
       order_passenger_relation_database_mod:
@@ -81,7 +81,7 @@ rules:
           sharding-count: 32
           table-sharding-count: 16
           strategy: standard
-          algorithmClassName: org.opengoofy.index12306.framework.starter.database.algorithm.sharding.CustomDbHashModShardingAlgorithm
+          algorithmClassName: org.jav.train12306.framework.starter.database.algorithm.sharding.CustomDbHashModShardingAlgorithm
       order_passenger_relation_table_mod:
         type: HASH_MOD
         props:

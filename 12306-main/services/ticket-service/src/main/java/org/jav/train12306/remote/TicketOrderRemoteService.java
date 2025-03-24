@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
-
-@FeignClient(value="train12306-order${unique-name:}-service",url="")
+@FeignClient(value="index12306-order${unique-name:}-service",url="")
+//@FeignClient(value="jav12306-order${unique-name:}-service",url="")
 public interface TicketOrderRemoteService {
     /**
      * 跟据订单号查询车票订单

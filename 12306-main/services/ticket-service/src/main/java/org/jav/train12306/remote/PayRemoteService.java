@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 @EnableFeignClients 是 Spring Cloud 提供的注解，用于启用 Feign 客户端功能。
 它会扫描项目中所有被 @FeignClient 注解标记的接口，并自动生成代理对象，从而可以通过这些接口调用远程服务。
  */
-@FeignClient(value="train12306-pay${unique-name:}-service",url="${aggregation.remote-url:}")
+@FeignClient(value="index12306-pay${unique-name:}-service",url="${aggregation.remote-url:}")
+//@FeignClient(value="jav12306-pay${unique-name:}-service",url="${aggregation.remote-url:}")
 public interface PayRemoteService {
     //根据订单号查询订单
     @GetMapping("/api/pay-service/pay/query")

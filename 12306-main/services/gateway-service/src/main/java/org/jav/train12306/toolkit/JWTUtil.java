@@ -13,9 +13,12 @@ import static org.jav.train12306.framework.starter.bases.constant.UserConstant.U
 import static org.jav.train12306.framework.starter.bases.constant.UserConstant.USER_NAME_KEY;
 @Slf4j
 public class JWTUtil {
-    private final static String SECRET= "javisabighandsomemanandhehasmanydreams";
+    //必须和前端带着的iss secret 和 token前缀符合
     private static final long EXPIRATION = 86400L;
-    private static final String TOKEN_PREFIX="jav真的帅啊哈";
+    public static final String TOKEN_PREFIX = "Bearer ";
+    public static final String ISS = "index12306";
+    public static final String SECRET = "SecretKey039245678901232039487623456783092349288901402967890140939827";
+
     public static String jwtGenerator(UserInfoDTO userInfoDTO){
         Map<String,Object> map=new HashMap<>();
         map.put(USER_ID_KEY, userInfoDTO.getUserId());

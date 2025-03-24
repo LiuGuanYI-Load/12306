@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 基于 Token 验证请求幂等性控制器
  */
-@RestController
+//@RestController
 @RequiredArgsConstructor
 public class IdempotentTokenController {
 
