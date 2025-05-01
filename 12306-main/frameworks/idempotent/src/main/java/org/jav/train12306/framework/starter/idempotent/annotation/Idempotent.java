@@ -33,6 +33,13 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Idempotent {
+//    @Idempotent(
+//            uniqueKeyPrefix = "index12306-order:pay_result_callback:",
+//            key = "#message.getKeys()+'_'+#message.hashCode()",
+//            type = IdempotentTypeEnum.SPEL,
+//            scene = IdempotentSceneEnum.MQ,
+//            keyTimeout = 7200L
+//    )
 
     /**
      * 幂等Key，只有在 {@link Idempotent#type()} 为 {@link IdempotentTypeEnum#SPEL} 时生效

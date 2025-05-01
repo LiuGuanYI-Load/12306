@@ -59,6 +59,7 @@ public final class AbstractChainContext<T> implements CommandLineRunner {
         abstractChainHandlers.forEach(each -> each.handler(requestParam));
     }
 
+
     @Override
     public void run(String... args) throws Exception {
         Map<String, AbstractChainHandler> chainFilterMap = ApplicationContextHolder

@@ -19,7 +19,6 @@ package org.jav.train12306.service.orderid;
 
 /**
  * 全局唯一订单号生成器
- * 公众号：马丁玩编程，回复：加群，添加马哥微信（备注：12306）获取项目资料
  */
 public class DistributedIdGenerator {
 

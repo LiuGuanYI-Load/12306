@@ -25,8 +25,8 @@ import org.jav.train12306.service.SeatService;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
@@ -38,6 +38,7 @@ public class TrainSeatTypeSelector {
     private final UserRemoteService userRemoteService;
     private final TrainStationPriceMapper trainStationPriceMapper;
     private final AbstractStrategyChoose abstractStrategyChoose;
+    //从ioc注入定义的bean
     private final ThreadPoolExecutor selectSeatThreadPoolExecutor;
 
     public List<TrainPurchaseTicketRespDTO> select(Integer trainType, PurchaseTicketReqDTO requestParam) {
@@ -47,6 +48,8 @@ public class TrainSeatTypeSelector {
         if(seatTypeMap.size()>1){
             // 初始化 Future 列表，用于存储多线程分配座位的结果
             List<Future<List<TrainPurchaseTicketRespDTO>>> futureResults = new ArrayList<>(seatTypeMap.size());
+            //用线程池提交不同的座位类型的 票的购买
+            //submit和execute的区别 submit是出现异常的话 放在future对象 需要.get()方法才能 得到执行结果 但是还是调用的execute方法
             seatTypeMap.forEach((seatType, passengersDetail)->{
                 Future<List<TrainPurchaseTicketRespDTO>> completableFuture=selectSeatThreadPoolExecutor.submit(()->distributeSeats(trainType,seatType,requestParam,passengersDetail));
                 futureResults.add(completableFuture);
@@ -63,7 +66,7 @@ public class TrainSeatTypeSelector {
                         }
                     }
             );
-            //可能的优化 因为座位类型并不是很多
+            //可能的优化 去掉并行流 因为座位类型并不是很多
 /*            futureResults.stream().forEach(
                     futureResult -> {
                         try {

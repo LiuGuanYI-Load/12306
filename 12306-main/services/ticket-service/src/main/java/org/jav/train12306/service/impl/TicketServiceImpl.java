@@ -125,28 +125,52 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
     @Value("${framework.cache.redis.prefix:}")
     private String cacheRedisPrefix;
 
-
+    /**
+     --流程如下
+     检查输入：先确认站名和日期合法。
+     查车次：从 Redis 里找有哪些车次经过这两个站。
+     查票价和余票：为每趟车查票价和剩余座位数。
+     组装数据：把车次、票价、余票装一起。
+     返回结果：给前端一个完整的票列表
+     */
     @Override
     public TicketPageQueryRespDTO pageListTicketQueryV2(TicketPageQueryReqDTO requestParam) {
-        //责任链
+        //责任链 查询车票的责任链
         ticketPageQueryAbstractChainContext.handler(TicketChainMarkEnum.TRAIN_QUERY_FILTER.name(), requestParam);
         //得到对缓存操作的实例  注意这里的缓存不是令牌容器
         StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+        //查出发站和到达站的详细信息 就是 北京有什么站 北京和北京南 南京--> 南京站 和 南京南站
         List<Object> stationDetails = stringRedisTemplate.opsForHash()
                 .multiGet(REGION_TRAIN_STATION_MAPPING, Lists.newArrayList(requestParam.getFromStation(), requestParam.getToStation()));
         String buildRegionTrainStationHashKey = String.format(REGION_TRAIN_STATION, stationDetails.get(0), stationDetails.get(1));
+       //两个站的车次已经查出来了 同一个出发点，到达点，查出来的车次都是一样的 每天的车次都是固定的 所以查询条件就只有  出发站和到达站
         Map<Object, Object> regionTrainStationAllMap = stringRedisTemplate.opsForHash().entries(buildRegionTrainStationHashKey);
+        //  把车次信息从 JSON 转成对象列表，并按时间排序
+        // - regionTrainStationAllMap.values() 取出所有车次数据的 JSON 字符串
+        // - map 把每个 JSON 转成 TicketListDTO 对象（包含车次 ID、出发地等）
+        // - sorted 用 TimeStringComparator 按发车时间排序
+        // - toList 转成列表，seatResults 是排序后的车次列表
         List<TicketListDTO> seatResults = regionTrainStationAllMap.values().stream()
                 .map(each -> JSON.parseObject(each.toString(), TicketListDTO.class))
                 .sorted(new TimeStringComparator())
                 .toList();
+        //   为每个车次生成票价的 Redis key
+        // - cacheRedisPrefix 是缓存前缀，比如 "cache:"
+        // - TRAIN_STATION_PRICE 是模板，比如 "TRAIN_STATION_PRICE:%s_%s_%s"
+        // - 拼成类似 "cache:TRAIN_STATION_PRICE:123_BJP_DZP"，表示某车次的票价
         List<String> trainStationPriceKeys = seatResults.stream()
                 .map(each -> String.format(cacheRedisPrefix + TRAIN_STATION_PRICE, each.getTrainId(), each.getDeparture(), each.getArrival()))
                 .toList();
+        //    用 Redis 管道批量查询票价数据
+        //    // - executePipelined 是管道操作，一次发多个命令，效率高
+        //    // - trainStationPriceKeys.forEach 循环查每个 key 的值
+        //    // - trainStationPriceObjs 是查到的票价数据列表（JSON 字符串）
+        //管道模式批量执行 GET 命令，查每个 key 的值（JSON 字符串）。减少网络往返，提升性能。
         List<Object> trainStationPriceObjs = stringRedisTemplate.executePipelined((RedisCallback<String>) connection -> {
             trainStationPriceKeys.forEach(each -> connection.stringCommands().get(each.getBytes()));
             return null;
         });
+        //从redis查余票
         List<TrainStationPriceDO> trainStationPriceDOList = new ArrayList<>();
         List<String> trainStationRemainingKeyList = new ArrayList<>();
         for (Object each : trainStationPriceObjs) {
@@ -157,6 +181,7 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
                 trainStationRemainingKeyList.add(trainStationRemainingKey);
             }
         }
+        //查询余票数据
         List<Object> trainStationRemainingObjs = stringRedisTemplate.executePipelined((RedisCallback<String>) connection -> {
             for (int i = 0; i < trainStationRemainingKeyList.size(); i++) {
                 connection.hashCommands().hGet(trainStationRemainingKeyList.get(i).getBytes(), trainStationPriceDOList.get(i).getSeatType().toString().getBytes());
@@ -217,7 +242,7 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
         // 从令牌桶中获取令牌，检查是否有余票可用
         //
         TokenResultDTO tokenResult = ticketAvailabilityTokenBucket.takeTokenFromBucket(requestParam);
-        // 如果令牌为空（无余票） 并且数据库里面都没有余票
+        //令牌桶没了
         if (tokenResult.getTokenIsNull()) {
             // 从本地缓存中检查是否已为该列车刷新过令牌
             Object ifPresentObj = tokenTicketsRefreshMap.getIfPresent(requestParam.getTrainId());
@@ -249,48 +274,32 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
                 .collect(Collectors.groupingBy(PurchaseTicketPassengerDetailDTO::getSeatType));
         // 遍历每种座位类型，创建对应的锁
         seatTypeMap.forEach((seatType, count) -> {
-            // 构造锁的键名，包含列车ID和座位类型
             String lockKey = environment.resolvePlaceholders(String.format(LOCK_PURCHASE_TICKETS_V2, requestParam.getTrainId(), seatType));
-            // 从本地锁缓存中获取锁对象
             ReentrantLock localLock = localLockMap.getIfPresent(lockKey);
-            // 如果本地锁不存在
             if (localLock == null) {
-                // 使用 synchronized 块同步，确保锁只创建一次
                 synchronized (TicketService.class) {
-                    // 再次检查缓存，避免重复创建
                     if ((localLock = localLockMap.getIfPresent(lockKey)) == null) {
-                        // 创建公平的可重入锁
                         localLock = new ReentrantLock(true);
-                        // 将锁放入本地缓存，有效期1天
                         localLockMap.put(lockKey, localLock);
                     }
                 }
             }
-            // 将本地锁添加到列表
             localLockList.add(localLock);
             // 创建分布式公平锁，用于跨节点同步
             RLock distributedLock = redissonClient.getFairLock(lockKey);
-            // 将分布式锁添加到列表
             distributedLockList.add(distributedLock);
         });
-
-        // 使用 try-finally 块确保锁被正确释放
         try {
-            // 对所有本地锁加锁，控制单机并发
             localLockList.forEach(ReentrantLock::lock);
-            // 对所有分布式锁加锁，控制分布式并发
             distributedLockList.forEach(RLock::lock);
-            // 执行购票核心逻辑，返回购票结果
             return ticketService.executePurchaseTickets(requestParam);
         } finally {
-            // 释放所有本地锁，忽略异常以避免影响主流程
             localLockList.forEach(localLock -> {
                 try {
                     localLock.unlock();
                 } catch (Throwable ignored) {
                 }
             });
-            // 释放所有分布式锁，忽略异常以避免影响主流程
             distributedLockList.forEach(distributedLock -> {
                 try {
                     distributedLock.unlock();
@@ -490,8 +499,8 @@ public class TicketServiceImpl extends ServiceImpl<TicketMapper, TicketDO> imple
                 List<SeatTypeCountDTO> seatTypeCountDTOList = seatService.listSeatTypeCount(Long.parseLong(requestParam.getTrainId()), requestParam.getDeparture(), requestParam.getArrival(), seatTypes);
                 for (SeatTypeCountDTO each : seatTypeCountDTOList) {
                     Integer tokenCount = tokenCountMap.get(each.getSeatType());
-                    if (tokenCount <= each.getSeatCount()) {
-                        //库存大于当前请求的票数 但是当前令牌小于请求的票数  就删除令牌 等待下次重新刷新
+                    if (tokenCount >= each.getSeatCount()) {
+                        //请求之中的票数大于 库存 就删除令牌桶
                         ticketAvailabilityTokenBucket.delTokenInBucket(requestParam);
                         break;
                     }

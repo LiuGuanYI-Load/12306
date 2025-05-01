@@ -110,7 +110,7 @@ public final class TicketAvailabilityTokenBucket {
                     Map<String, String> ticketAvailabilityTokenMap = new HashMap<>();
                     // 遍历站间路由
                     for (RouteDTO each : routeDTOList) {
-                        // 查询每个站间路由的座位类型计数
+                        // 查询每个站间路由的座位类型余票计数
                         List<SeatTypeCountDTO> seatTypeCountDTOList = seatService.listSeatTypeCount(
                                 Long.parseLong(requestParam.getTrainId()),
                                 each.getStartStation(),

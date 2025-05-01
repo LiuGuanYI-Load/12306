@@ -161,66 +161,90 @@ public class UserLoginServiceImpl implements UserLoginService {
         boolean hasUsername = userRegisterCachePenetrationBloomFilter.contains(username);
         if (hasUsername) {
             StringRedisTemplate instance = (StringRedisTemplate) distributedCache.getInstance();
+            //这里是查询 这个名字是不是 可复用的set集合 如果是 说明是这个名字注册过 但是又注销了
             return instance.opsForSet().isMember(USER_REGISTER_REUSE_SHARDING + hashShardingIdx(username), username);
         }
+        //到这说明 bloom是没有的 一定可用
         return true;
     }
 
+    // 开启 Spring 事务管理，任何 Exception 抛出时回滚，确保多表操作一致性
     @Transactional(rollbackFor = Exception.class)
     @Override
     public UserRegisterRespDTO register(UserRegisterReqDTO requestParam) {
-        //责任链
+        // 调用责任链模式，执行注册前的过滤逻辑（如参数校验、黑名单检查）
         abstractChainContext.handler(UserChainMarkEnum.USER_REGISTER_FILTER.name(), requestParam);
-        //分布式锁
+
+        // 获取 Redisson 分布式锁，锁键为 "LOCK_USER_REGISTER" + 用户名，防止并发注册同一用户
         RLock lock = redissonClient.getLock(LOCK_USER_REGISTER + requestParam.getUsername());
+        // 尝试获取锁，默认无等待时间，失败则返回 false
         boolean tryLock = lock.tryLock();
+        // 未获取到锁，说明有并发注册，抛出用户名已存在异常
         if (!tryLock) {
             throw new ServiceException(HAS_USERNAME_NOTNULL);
         }
+
         try {
             try {
-                //插入
+                // 将请求 DTO 转为 DO，插入用户表，返回影响行数
                 int inserted = userMapper.insert(BeanUtil.convert(requestParam, UserDO.class));
-                //
+                // 插入失败（结果行数 < 1），记录日志并抛出注册失败异常
                 if (inserted < 1) {
+                    log.error("用户 [{}] 注册失败，插入用户表无影响行", requestParam.getUsername());
                     throw new ServiceException(USER_REGISTER_FAIL);
                 }
             } catch (DuplicateKeyException dke) {
+                // 捕获用户名重复异常，记录日志并抛出用户名已存在异常
                 log.error("用户名 [{}] 重复注册", requestParam.getUsername());
                 throw new ServiceException(HAS_USERNAME_NOTNULL);
             }
+
+            // 构建用户手机号 DO，包含手机号和用户名
             UserPhoneDO userPhoneDO = UserPhoneDO.builder()
                     .phone(requestParam.getPhone())
                     .username(requestParam.getUsername())
                     .build();
             try {
+                // 插入手机号记录
                 userPhoneMapper.insert(userPhoneDO);
             } catch (DuplicateKeyException dke) {
+                // 捕获手机号重复异常，记录日志并抛出手机号已注册异常
                 log.error("用户 [{}] 注册手机号 [{}] 重复", requestParam.getUsername(), requestParam.getPhone());
                 throw new ServiceException(PHONE_REGISTERED);
             }
+
+            // 检查邮箱是否非空，非空则插入邮箱记录
             if (StrUtil.isNotBlank(requestParam.getMail())) {
                 UserMailDO userMailDO = UserMailDO.builder()
                         .mail(requestParam.getMail())
                         .username(requestParam.getUsername())
                         .build();
                 try {
+                    // 插入邮箱记录
                     userMailMapper.insert(userMailDO);
                 } catch (DuplicateKeyException dke) {
+                    // 捕获邮箱重复异常，记录日志并抛出邮箱已注册异常
                     log.error("用户 [{}] 注册邮箱 [{}] 重复", requestParam.getUsername(), requestParam.getMail());
                     throw new ServiceException(MAIL_REGISTERED);
                 }
             }
 
+            // 获取用户名，清理复用表和 Redis 缓存
             String username = requestParam.getUsername();
+            // 删除用户复用表中的记录
             userReuseMapper.delete(Wrappers.update(new UserReuseDO(username)));
+            // 获取 Redis 操作实例，从分片 Set 中移除用户名
             StringRedisTemplate instance = (StringRedisTemplate) distributedCache.getInstance();
             instance.opsForSet().remove(USER_REGISTER_REUSE_SHARDING + hashShardingIdx(username), username);
-            // 布隆过滤器设计问题：设置多大、碰撞率以及初始容量不够了怎么办？详情查看：https://nageoffer.com/12306/question
+            // 将用户名添加到布隆过滤器，防止缓存穿透
             userRegisterCachePenetrationBloomFilter.add(username);
+
         } finally {
+            // 确保分布式锁释放，避免死锁
             lock.unlock();
         }
+
+        // 将请求参数转为响应 DTO 返回
         return BeanUtil.convert(requestParam, UserRegisterRespDTO.class);
     }
 
@@ -234,7 +258,7 @@ public class UserLoginServiceImpl implements UserLoginService {
         }
         RLock lock = redissonClient.getLock(USER_DELETION + requestParam.getUsername());
         // 加锁为什么放在 try 语句外？https://www.yuque.com/magestack/12306/pu52u29i6eb1c5wh
-        //防止 在没上锁之前 出现空指针引用等 因为锁的资源是必须拿到才能进行的
+        //防止 没上锁之前 出现空指针引用等 因为锁的资源是必须拿到才能进行的 或者lock.lock放在try第一个语句
         lock.lock();
         try {
             UserQueryRespDTO userQueryRespDTO = userService.queryUserByUsername(username);

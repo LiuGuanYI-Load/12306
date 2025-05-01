@@ -21,7 +21,7 @@ import cn.hutool.core.map.MapUtil;
 import org.junit.jupiter.api.Test;
 import org.jav.train12306.dao.entity.CarriageDO;
 import org.jav.train12306.dao.mapper.CarriageMapper;
-import org.opengoofy.index12306.framework.starter.common.enums.DelEnum;
+import org.jav.train12306.framework.starter.common.enums.DelEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 

@@ -443,6 +443,7 @@ public class TrainFirstClassPurchaseTicketHandler extends AbstractTrainPurchaseT
         return actualResult;
     }
 
+
     public static int[][] mergeArrays(int[][] array1, int[][] array2) {
         List<int[]> list = new ArrayList<>(Arrays.asList(array1));
         list.addAll(Arrays.asList(array2));

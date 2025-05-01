@@ -58,6 +58,7 @@ public final class IdempotentAspect {
             instance.exceptionProcessing();
             throw ex;
         } finally {
+            //释放分布式锁
             IdempotentContext.clean();
         }
         return resultObj;

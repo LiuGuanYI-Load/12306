@@ -99,6 +99,9 @@ public final class RedisKeyConstant {
 
     /**
      * 用户购票分布式锁 Key v2
+     * 列车id和座位类型
+     *   效果 ------>北京_德州_3 86
+     *
      */
     public static final String LOCK_PURCHASE_TICKETS_V2 = "${unique-name:}index12306-ticket-service:lock:purchase_tickets_%s_%d";
 
